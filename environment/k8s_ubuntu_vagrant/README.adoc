@@ -1,0 +1,11 @@
+== Install the env
+
+=== Prerequesits
+vagrant
+
+
+=== Start env
+
+vagrant up
+
+
