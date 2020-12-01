@@ -1,0 +1,33 @@
+== Example NetworkPolicy
+
+This network policy will be applied to thede pods in the default namespace with a podSelector of id: frontend.
+
+it will be about outgoing traffic policyTypes Egress
+
+it has tow roules:
+1. to namespaces with the namespaceSelector id: ns1 and for the protocol TCP and port 80
+2. to pods in the default namespace with the podSeclector id: backend
+
+
+kubectl run frontend --image=nginx --labels='id=frontend','test=test' -oyaml --dry-run=client > frontend.yaml
+
+kubectl run frontend --image=nginx --labels='id=backend' -oyaml --dry-run=client > backend.yaml
+
+kubectl create ns ns1 --dry-run=client -oyaml > ns.yaml
+edit ns.yaml
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  creationTimestamp: null
+  name: ns1
+  labels:
+    id: ns1
+spec: {}
+status: {}
+
+kubectl expose frontend --port 80
+kubectl expose backend --port 80
+
+kubectl exec frontend -- curl backend     # this works becose backend is in the same namespace
+kubectl exec frontend -- curl ns.backend
