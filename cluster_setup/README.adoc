@@ -5,7 +5,7 @@
 * Properly set up Ingress objects with security control
 * Protect node metadata and endpoints
 * Minimize use of, and access to, GUI elements
-*Verify platform binaries before deploying
+* Verify platform binaries before deploying
 
 
 === NetworkPolicies
@@ -66,3 +66,6 @@ spec:
 - must be set in the namespace
 * podSelector
 - must be set in the pod/deployment
+=======
+
+
