@@ -350,4 +350,5 @@ MigrationBackup/
 .ionide/
 
 # Vagrant Files
-/environment/k8s_ubuntu_vagrent/.vagrant
+environment/k8s_ubuntu_vagrent/.vagrant
+
