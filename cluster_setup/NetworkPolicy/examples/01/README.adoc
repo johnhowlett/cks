@@ -31,3 +31,4 @@ kubectl expose backend --port 80
 
 kubectl exec frontend -- curl backend     # this works becose backend is in the same namespace
 kubectl exec frontend -- curl ns.backend
+
