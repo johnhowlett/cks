@@ -1,0 +1,40 @@
+== Node Metadata
+
+=== Cloud Paltform Node Metadata
+
+* Metadata service API by default reachable from VMs
+* Can contain cloud credentials for VMs / Node
+* Can contain provisioning data like kubelet credentials
+
+
+=== Restrict access using NetworkPolicies
+
+https://cloud.google.com/compute/docs/storing-retrieving-metadata
+
+[source,bash]
+----
+
+$ curl "http://metadata.google.internal/computeMetadata/v1/instance/disks/" -H "Metadata-Flavor: Google"
+
+# kubectl run nginx --image=nginx
+root@nginx:/# curl "http://metadata.google.internal/computeMetadata/v1/instance/disks/" -H "Metadata-Flavor: Google"
+0/
+
+ k create namespace metadata
+ k run nginx-deny --image=nginx -n metadata
+ k run nginy-allow --image=nginx --labels="role=metadata-accessor" -n metadata
+
+ k apply -f deny.yaml -f allow.yaml
+
+ k exec -n metadat -it nginx-deny -- bash
+root@nginx-deny:/# curl "http://metadata.google.internal/computeMetadata/v1/instance/disks/" -H "Metadata-Flavor: Google"
+curl: (7) Failed to connect to metadata.google.internal port 80: Connection timed out
+
+ k exec -n metadata -it nginx-allow -- bash
+root@nginx-deny:/# curl "http://metadata.google.internal/computeMetadata/v1/instance/disks/" -H "Metadata-Flavor: Google"
+0/
+
+Cleanup:
+ k -n metadata delete pod --all --grace-period=0 --force
+
+----
