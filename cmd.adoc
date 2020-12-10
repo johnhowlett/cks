@@ -1,0 +1,17 @@
+== Command Line 
+This is a cheat sheet for the command line commands.
+
+=== Auth
+
+`kubectl auth can-i get pods --namespace red --as _<user>_` +
+`kubectl -n _<namespace>_ auth can-i delete secrets --as system:serviceaccount: _<namespace>_ : _<sa-name>_` +
+
+=== Clusterrole Clusterrolebinding
+`kubectl create clusterrole _<c-role-name>_ --verb delete --resource deployments` +
+`kubectl create clusterrolebinding _<c-rolebunding-name>_ --clusterrole _<c-role-name>_ --user _<user>_` +
+
+=== Role Rolebinding
+
+`kubectl -n red create role _<role-name>_ --verb=get --resource=secrets -oyaml --dry-run=client` +
+`kubectl -n red create role _<role-name>_ --verb=get --resouces=secrets` +
+`kubectl -n red create rolebinding _<rolebining-name>_ --role=role-name --user=_<user>_` +

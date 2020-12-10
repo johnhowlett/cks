@@ -1,0 +1,24 @@
+== RBAC
+
+Definition in the API-Server config 
+----
+ --authorization-mode=Node,RBAC
+----
+
+NOTE: Specify what is *ALLOWED*, every thing elese is DENIED
+
+Combination from role and binding:
+
+role -> rolebinding  (namespaced)
+clusterrole -> clusterrolebinding (cluster wide)
+clusterrole -> rolebinding  (namespcaed)
+
+`kubectl auth can-i get pods --namespace red --as _<user>_` +
+
+`kubectl -n red create role _<role-name>_ --verb=get --resource=secrets -oyaml --dry-run=client` +
+`kubectl -n red create role _<role-name>_ --verb=get --resouces=secrets` +
+`kubectl -n red create rolebinding _<rolebining-name>_ --role=role-name --user=_<user>_` +
+
+`kubectl create clusterrole _<c-role-name>_ --verb delete --resource deployments` +
+`kubectl create clusterrolebinding _<c-rolebunding-name>_ --clusterrole _<c-role-name>_ --user _<user>_` +
+
