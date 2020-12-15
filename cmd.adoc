@@ -1,4 +1,4 @@
-== Command Line 
+== Command Line
 This is a cheat sheet for the command line commands.
 
 === Auth
@@ -15,3 +15,23 @@ This is a cheat sheet for the command line commands.
 `kubectl -n red create role _<role-name>_ --verb=get --resource=secrets -oyaml --dry-run=client` +
 `kubectl -n red create role _<role-name>_ --verb=get --resouces=secrets` +
 `kubectl -n red create rolebinding _<rolebining-name>_ --role=role-name --user=_<user>_` +
+
+== Curl
+----
+curl https://secure-ingress.com:30846/service2 -kv --resolve secure-ingress.com:30846:34.65.87.245
+----
+
+== docker
+
+Copy of the hole docker filesystem to a direktory on disk
+----
+docker cp <ID>:/ container-fs
+----
+
+== Unix
+----
+# echo "fc9de14...c81c189 kubernetes-server-linux-amd64.tar.gz" | sha512sum -c
+kubernetes-server-linux-amd64.tar.gz: OK
+
+# cat jane.csr | base64 -w 0
+----

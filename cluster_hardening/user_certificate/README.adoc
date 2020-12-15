@@ -1,0 +1,73 @@
+== User Account and Certificates
+
+In k8s there is no User resouce, the user hase a cert or a token. In the cert there is a CN=<user> that is the user.
+
+ CSR -> CertificateSigningResquest -> API + CA -> cert
+
+
+NOTE: There is no way to invalidate a certificate.
+
+NOTE: If a certificate has been leaked +
+      * Remove all access via RBAC +
+      * Username cannot be used untill cert expired +
+      * Cert new CA and re-issue all certs
+
+1. Create a Key +
+`# openssl genrsa -out jane.key 2048`
+2. Create a CSR (Certification Signing Request) +
+Importent: CN  -> user
+----
+root@cks-master:~# openssl req -new -key jane.key -out jane.csr
+Can't load /root/.rnd into RNG
+140079534617024:error:2406F079:random number generator:RAND_load_file:Cannot open file:../crypto/rand/randfile.c:88:Filename=/root/.rnd
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:
+State or Province Name (full name) [Some-State]:
+Locality Name (eg, city) []:
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:
+Organizational Unit Name (eg, section) []:
+Common Name (e.g. server FQDN or YOUR name) []:jane
+Email Address []:
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:
+An optional company name []:
+----
+3. Sign the CSR using kubernetes API +
+----
+
+root@cks-master:~# k get certificatesigningrequests
+NAME   AGE   SIGNERNAME                            REQUESTOR          CONDITION
+jane   13s   kubernetes.io/kube-apiserver-client   kubernetes-admin   Pending
+
+root@cks-master:~# k certificate approve jane
+certificatesigningrequest.certificates.k8s.io/jane approved
+
+# k get csr jane -o yaml
+in the status section is the certificat
+
+echo "LS0tLS1CR...QVRFLS0tLS0K" | base64 -d > jane.crt
+----
+4. Download CRT from API
+----
+# k get csr jane -o yaml
+in the status section is the certificat
+
+echo "LS0tLS1CR...QVRFLS0tLS0K" | base64 -d > jane.crt
+----
+5. Make a kubectl configuration
+
+----
+k config set-credentials jane --client-key=jane.key --client-certificate=jane.crt
+k config set-context jane --cluster=kubernetes --user=jane
+k config view
+k config get-contexts
+k config use-context jane
+----
