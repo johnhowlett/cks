@@ -35,3 +35,19 @@ kubernetes-server-linux-amd64.tar.gz: OK
 
 # cat jane.csr | base64 -w 0
 ----
+
+== GCP Google Cloud Platform
+
+https://console.cloud.google.com/
+
+----
+gcloud auth login
+gcloud projects list
+gcloud compute instances list
+
+gcloud compute ssh cks-master
+gcloud compute ssh cks-worker
+
+john@cks-worker:~$ sudo -i
+
+----

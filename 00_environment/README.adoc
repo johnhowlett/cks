@@ -1,0 +1,10 @@
+== Enviroment
+Build the Cluster Localy
+
+=== K8s Ubuntu with vagrant
+
+
+=== Kind Cluster
+
+
+=== GCP with tow VM's
