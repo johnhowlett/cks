@@ -1,0 +1,164 @@
+== Restricht API
+
+. don't allow anonymous access
+. close insecute port
+. don't expose API-Server to the outside world
+. restrict access from Node to API (NodeRestriction)
+
+=== API - Server
+Configuratation:
+/etc/kubernetes/manifests/kube-apiserver.yaml
+
+
+
+=== Anonymus Access
+kube-apiserver conf  --anonymous-auth=true|false
+
+
+[bash]
+----
+root@cks-master:/etc/kubernetes# curl https://localhost:6443 -k
+{
+  "kind": "Status",
+  "apiVersion": "v1",
+  "metadata": {
+
+  },
+  "status": "Failure",
+  "message": "forbidden: User \"system:anonymous\" cannot get path \"/\"",
+  "reason": "Forbidden",
+  "details": {
+
+  },
+  "code": 403
+----
+
+=== Insecure Port
+kube-apiserver  --insecure-port=8080 | 0 = disabled
+
+WARNING: request with insecure-port will be *http* and the resuest is *bypass* authenticate and autherization modules.
+
+Admission controller still be enforced.
+
+[bash]
+----
+# curl http://localhost:8080//healthz
+----
+
+=== Manuall API Request
+
+. Certificate from kube config
+  .. get the certificate-authority-data
+  .. get the client-certificate-date
+  .. get the client-key-date
+. Get also the server IP in the config server:
+
+
+[bash]
+----
+# k config view --raw
+
+# echo  LS0tLS1CRUdJTiBDCC...0tLS0tCg== | base64 -d  > ca
+# echo  ls0tLS1CRUdJTiBDAA...UtLS0tLQo= | base64 -d  > client
+# echo  ls0tLS1CRUdJTiBDRV..S0tLS0tCg== | base64 -d  > key
+
+# curl https://10.172.0.2:6443 --cacert ca --cert cert --key key
+
+----
+
+
+=== Remote Kubectl Request
+
+. make the kubernetes svc service a NodePort Type
+. copy the kubectl conf
+. change the server entry in the conf file with the <extener IP-Address>:<node-port>
+
+
+----
+# k edit svc kubernetes -n default
+
+  sessionAffinity: None
+  type: ClusterIP  => NodePort
+status:
+  loadBalancer: {}
+
+# curl -k https://<externe IP-Address>:30046
+
+# k config view --raw  > new_conf
+
+# change the server with the extern IP:NodePort
+
+
+----
+
+NOTE: "Unable to connect th the server: x509: certificate is valid for 10.96.0.1 not <extern IP>"
+
+.inspect api - cert
+[bash]
+----
+# cd /etc/kubernetes/pki
+
+# openssl x509 -in apiserver.crt -text
+.
+          X509v3 Subject Alternative Name:
+                DNS:cks-master, DNS:kubernetes, DNS:kubernetes.default, DNS:kubernetes.default.svc, DNS:kubernetes.default.svc.cluster.local, IP Address:10.96.0.1, IP Address:10.172.0.2
+    Signature Algorithm: sha256WithRSAEncryption
+.
+.
+
+
+----
+
+Add a host entry in the local /etc/hosts so
+
+----
+# vim /etc/hosts
+
+127.0.0.1    localhost
+<extern IP-Address>   kubernetes
+
+# change the server in the new kubeconfig file to kubernetes:<node-port>
+----
+
+=== NodeRestriction AdmissionControll
+
+kube-apiserver config: --enable-admission-plugins=NodeRestriction
+
+Limits the labels a kubelet can modifiy:
+
+----
+# use the kubelet conf from Node for the cmd
+# cat /etc/kubernetes/kubelet.conf
+
+# export KUBECONFIG=/etc/kubernetes/kubelet.conf
+
+root@cks-worker:~# k get nodes
+NAME         STATUS   ROLES    AGE   VERSION
+cks-master   Ready    master   22d   v1.19.3
+cks-worker   Ready    <none>   22d   v1.19.3
+
+# the kubelet has not the exces to list namespace
+root@cks-worker:~# k get ns
+Error from server (Forbidden): namespaces is forbidden: User "system:node:cks-worker" cannot list resource "namespaces" in API group "" at the cluster scope
+
+
+# k label node cks-master cks/test=yes  => forbidden
+# k label node cks-worker cks/test=yes  => ok
+# k label node cks-worker  node-restriction.kubernetes.io/test=yes  => forbidden
+----
+
+*Prevents* kubelets from adding/removing/updating labels with a node-restriction.kubernetes.io/
+
+*Allows* +
+kubernetes.io/hostname +
+kubernetes.io/arch +
+kubernetes.io/os +
+beta.kubernetes.io/instance-type +
+node.kubernetes.io/instance-type
+.
+.
+
+
+Links: +
+https://kubernetes.io/docs/concepts/security/controlling-access/ +
+https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction

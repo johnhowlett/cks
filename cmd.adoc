@@ -1,6 +1,20 @@
 == Command Line
 This is a cheat sheet for the command line commands.
 
+=== Kubeclt
+----
+export KUBECONFIG=/etc/kubernetes/kubelet.conf
+
+# bash-completion
+apt-get install bash-completion
+echo 'source <(kubectl completion bash)' >>~/.bashrc
+kubectl completion bash >/etc/bash_completion.d/kubectl
+
+# Alias
+echo 'alias k=kubectl' >>~/.bashrc
+echo 'complete -F __start_kubectl k' >>~/.bashrc
+----
+
 === Auth
 
 `kubectl auth can-i get pods --namespace red --as _<user>_` +
@@ -19,6 +33,14 @@ This is a cheat sheet for the command line commands.
 == Curl
 ----
 curl https://secure-ingress.com:30846/service2 -kv --resolve secure-ingress.com:30846:34.65.87.245
+
+# make a API request
+curl https://10.172.0.2:6443 --cacert ca --cert cert --key key
+----
+
+== Openssl
+----
+# openssl x509 -in apiserver.crt -text
 ----
 
 == docker

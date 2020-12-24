@@ -1,0 +1,120 @@
+== Ingress
+
+=== Install Ingress NGINX-Ingress
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/baremetal/deploy.yaml
+
+.Installation Nginx-Ingress
+[source,bash]
+----
+root@cks-master:~# kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/baremetal/deploy.yaml
+namespace/ingress-nginx created
+serviceaccount/ingress-nginx created
+configmap/ingress-nginx-controller created
+clusterrole.rbac.authorization.k8s.io/ingress-nginx created
+clusterrolebinding.rbac.authorization.k8s.io/ingress-nginx created
+role.rbac.authorization.k8s.io/ingress-nginx created
+rolebinding.rbac.authorization.k8s.io/ingress-nginx created
+service/ingress-nginx-controller-admission created
+service/ingress-nginx-controller created
+deployment.apps/ingress-nginx-controller created
+validatingwebhookconfiguration.admissionregistration.k8s.io/ingress-nginx-admission created
+serviceaccount/ingress-nginx-admission created
+clusterrole.rbac.authorization.k8s.io/ingress-nginx-admission created
+clusterrolebinding.rbac.authorization.k8s.io/ingress-nginx-admission created
+role.rbac.authorization.k8s.io/ingress-nginx-admission created
+rolebinding.rbac.authorization.k8s.io/ingress-nginx-admission created
+job.batch/ingress-nginx-admission-create created
+job.batch/ingress-nginx-admission-patch created
+
+root@cks-master:~# k -n ingress-nginx get pod,svc,cm
+NAME                                            READY   STATUS      RESTARTS   AGE
+pod/ingress-nginx-admission-create-ww2z7        0/1     Completed   0          108s
+pod/ingress-nginx-admission-patch-r5s2g         0/1     Completed   1          108s
+pod/ingress-nginx-controller-5dbd9649d4-xbgvh   1/1     Running     0          108s
+
+NAME                                         TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+service/ingress-nginx-controller             NodePort    10.103.140.149   <none>        80:30831/TCP,443:30846/TCP   108s
+service/ingress-nginx-controller-admission   ClusterIP   10.99.156.60     <none>        443/TCP                      108s
+
+NAME                                        DATA   AGE
+configmap/ingress-controller-leader-nginx   0      80s
+configmap/ingress-nginx-controller          0      108s
+
+----
+
+Check the connection on the external ip of the worker node e.g. 34.65.87.245 make a curl to the node port.
+
+----
+❯ curl http://34.65.87.245:30831
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+----
+
+and over https you see that the certificate is CN Kubernetes Ingress Controller Fake Certificate:
+
+----
+❯ curl https://34.65.87.245:30846 -k -v
+*   Trying 34.65.87.245...
+* TCP_NODELAY set
+* Connected to 34.65.87.245 (34.65.87.245) port 30846 (#0)
+* ALPN, offering h2
+* ALPN, offering http/1.1
+* successfully set certificate verify locations:
+*   CAfile: /etc/ssl/cert.pem
+  CApath: none
+* TLSv1.2 (OUT), TLS handshake, Client hello (1):
+* TLSv1.2 (IN), TLS handshake, Server hello (2):
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+* TLSv1.2 (IN), TLS change cipher, Change cipher spec (1):
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES128-GCM-SHA256
+* ALPN, server accepted to use h2
+* Server certificate:
+*  subject: O=Acme Co; CN=Kubernetes Ingress Controller Fake Certificate
+*  start date: Dec 12 10:50:13 2020 GMT
+*  expire date: Dec 12 10:50:13 2021 GMT
+*  issuer: O=Acme Co; CN=Kubernetes Ingress Controller Fake Certificate
+*  SSL certificate verify result: unable to get local issuer certificate (20), continuing anyway.
+----
+
+create the ingress, svc and pod
+----
+# k run pod1 --image=httpd --port 80
+# k run pod2 --image=httpd --port 80
+
+# k expose pod pod1 --port 80 --name service1
+# k expose pod pod2 --port 80 --name service2
+
+# k apply -f ingress.yaml
+----
+
+WARNING: add the annotaion without the is no connection
+.ingress.yaml
+----
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+----
+
+=== Securing Ingress
+
+Generate a self signet certificate:
+
+`openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes` +
+
+NOTE: and the FQDN in the Common Name (e.g. server FQDN or YOUR name) []:secure-ingress.com
+
+Create a secret with the generated cert and key
+`kubectl create secret tls secure-ingress --cert=cert.pem --key=key.pem`
+
+to connect to that ingress there is a curl flag *resolve*
+`curl https://secure-ingress.com:30846/service2 -kv --resolve secure-ingress.com:30846:34.65.87.245`
