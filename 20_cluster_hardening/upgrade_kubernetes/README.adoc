@@ -1,0 +1,65 @@
+== Upgrade Kubernetes Cluster with Kubeadm
+
+API-Server  +1 Version
+CP          -1 Version
+kubelet     -2 Version
+
+kubectl +- 1Version
+
+. drain master
+. upgrade master
+. uncorden master
+. update kubectl
+. drain worker
+. update worker
+. update kubelet
+. uncorden worker
+
+.Check Kubeadm Version
+[bash]
+----
+# apt-get upgrade
+# apt-cache show kubeadm | grep Version:
+Version: 1.20.1-00
+Version: 1.20.0-00
+Version: 1.19.6-00
+Version: 1.19.5-00
+Version: 1.19.4-00
+Version: 1.19.3-00
+
+
+
+----
+
+
+.Master
+[bash]
+----
+# k drain cks-master --ignore-daemonsets
+
+# apt-get install kubeadm=1.20.1-00 kubelet=1.20.1-00 kubectl=1.20.1-00
+
+# kubeadm upgrade plan
+# kubeadm upgrade apply v1.20.1
+
+# k uncordon cks-master
+
+----
+
+.Worker
+[bash]
+----
+# k drain cks-worker --ignore-daemonsets
+
+# apt-get install kubeadm=1.20.1-00
+# kubeadm version
+# kubeadm upgrade node
+
+# apt-get install kubelet=1.20.1-00 kubectl=1.20.1-00
+
+# k uncordon cks-worker
+----
+
+Links: +
+https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/ +
+https://kubernetes.io/docs/setup/release/version-skew-policy/
